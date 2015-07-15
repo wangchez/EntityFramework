@@ -304,6 +304,12 @@ namespace Microsoft.Data.Entity.Metadata
             return primaryKey;
         }
 
+        public static IKey GetDeclaredPrimaryKey([NotNull] this IEntityType entityType)
+        {
+            var primaryKey = entityType.GetPrimaryKey();
+            return primaryKey.DeclaringEntityType == entityType ? primaryKey : null;
+        }
+
         public static IKey GetKey([NotNull] this IEntityType entityType, [NotNull] Property property)
             => entityType.GetKey(new[] { property });
 

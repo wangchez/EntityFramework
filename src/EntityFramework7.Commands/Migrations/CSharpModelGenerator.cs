@@ -54,9 +54,10 @@ namespace Microsoft.Data.Entity.Commands.Migrations
         [Flags]
         protected enum GenerateEntityTypeOptions
         {
-            Primary = 1,
-            Secondary = 2,
-            Full = Primary | Secondary
+            Declared = 1,
+            BaseType = 2,
+            Relationships = 4,
+            Full = Declared | BaseType | Relationships
         }
 
         protected virtual void GenerateEntityTypes(
@@ -69,14 +70,21 @@ namespace Microsoft.Data.Entity.Commands.Migrations
             {
                 stringBuilder.AppendLine();
 
-                GenerateEntityType(entityType, stringBuilder, GenerateEntityTypeOptions.Primary);
+                GenerateEntityType(entityType, stringBuilder, GenerateEntityTypeOptions.Declared);
+            }
+
+            foreach (var entityType in entityTypes.Where(e => e.BaseType != null))
+            {
+                stringBuilder.AppendLine();
+
+                GenerateEntityType(entityType, stringBuilder, GenerateEntityTypeOptions.BaseType);
             }
 
             foreach (var entityType in entityTypes.Where(e => e.GetForeignKeys().Any()))
             {
                 stringBuilder.AppendLine();
 
-                GenerateEntityType(entityType, stringBuilder, GenerateEntityTypeOptions.Secondary);
+                GenerateEntityType(entityType, stringBuilder, GenerateEntityTypeOptions.Relationships);
             }
         }
 
@@ -85,6 +93,18 @@ namespace Microsoft.Data.Entity.Commands.Migrations
         {
             Check.NotNull(entityType, nameof(entityType));
             Check.NotNull(stringBuilder, nameof(stringBuilder));
+
+            if ((options & GenerateEntityTypeOptions.BaseType) != 0)
+            {
+                stringBuilder
+                    .Append("builder.Entity(")
+                    .Append(_code.Literal(entityType.Name))
+                    .Append(").BaseType(")
+                    .Append(_code.Literal(entityType.BaseType.Name))
+                    .AppendLine(");");
+
+                return;
+            }
 
             stringBuilder
                 .Append("builder.Entity(")
@@ -97,21 +117,26 @@ namespace Microsoft.Data.Entity.Commands.Migrations
 
                 using (stringBuilder.Indent())
                 {
-                    if ((options & GenerateEntityTypeOptions.Primary) != 0)
+                    if ((options & GenerateEntityTypeOptions.Declared) != 0)
                     {
-                        GenerateProperties(entityType.GetProperties(), stringBuilder);
+                        GenerateProperties(entityType.GetDeclaredProperties(), stringBuilder);
 
-                        GenerateKey(entityType.GetPrimaryKey(), stringBuilder);
+                        GenerateKey(entityType.GetDeclaredPrimaryKey(), stringBuilder);
 
-                        GenerateIndexes(entityType.GetIndexes(), stringBuilder);
+                        GenerateIndexes(entityType.GetDeclaredIndexes(), stringBuilder);
                     }
 
-                    if ((options & GenerateEntityTypeOptions.Secondary) != 0)
+                    if ((options & GenerateEntityTypeOptions.BaseType) != 0)
                     {
-                        GenerateForeignKeys(entityType.GetForeignKeys(), stringBuilder);
+                        GenerateBaseType(entityType.BaseType, stringBuilder);
                     }
 
-                    if ((options & GenerateEntityTypeOptions.Primary) != 0)
+                    if ((options & GenerateEntityTypeOptions.Relationships) != 0)
+                    {
+                        GenerateForeignKeys(entityType.GetDeclaredForeignKeys(), stringBuilder);
+                    }
+
+                    if ((options & GenerateEntityTypeOptions.Declared) != 0)
                     {
                         GenerateEntityTypeAnnotations(entityType, stringBuilder);
                     }
@@ -262,6 +287,22 @@ namespace Microsoft.Data.Entity.Commands.Migrations
             }
 
             stringBuilder.Append(";");
+        }
+
+        protected virtual void GenerateBaseType([NotNull] IEntityType entityType, [NotNull] IndentedStringBuilder stringBuilder)
+        {
+            Check.NotNull(entityType, nameof(entityType));
+            Check.NotNull(stringBuilder, nameof(stringBuilder));
+
+            if (entityType.BaseType != null)
+            {
+                stringBuilder.AppendLine();
+                stringBuilder
+                    .Append("b.BaseType(")
+                    .Append(_code.Literal(entityType.BaseType.Name))
+                    .AppendLine(");");
+            }
+
         }
 
         protected virtual void GenerateEntityTypeAnnotations([NotNull] IEntityType entityType, [NotNull] IndentedStringBuilder stringBuilder)
