@@ -126,11 +126,6 @@ namespace Microsoft.Data.Entity.Commands.Migrations
                         GenerateIndexes(entityType.GetDeclaredIndexes(), stringBuilder);
                     }
 
-                    if ((options & GenerateEntityTypeOptions.BaseType) != 0)
-                    {
-                        GenerateBaseType(entityType.BaseType, stringBuilder);
-                    }
-
                     if ((options & GenerateEntityTypeOptions.Relationships) != 0)
                     {
                         GenerateForeignKeys(entityType.GetDeclaredForeignKeys(), stringBuilder);
@@ -287,22 +282,6 @@ namespace Microsoft.Data.Entity.Commands.Migrations
             }
 
             stringBuilder.Append(";");
-        }
-
-        protected virtual void GenerateBaseType([NotNull] IEntityType entityType, [NotNull] IndentedStringBuilder stringBuilder)
-        {
-            Check.NotNull(entityType, nameof(entityType));
-            Check.NotNull(stringBuilder, nameof(stringBuilder));
-
-            if (entityType.BaseType != null)
-            {
-                stringBuilder.AppendLine();
-                stringBuilder
-                    .Append("b.BaseType(")
-                    .Append(_code.Literal(entityType.BaseType.Name))
-                    .AppendLine(");");
-            }
-
         }
 
         protected virtual void GenerateEntityTypeAnnotations([NotNull] IEntityType entityType, [NotNull] IndentedStringBuilder stringBuilder)
