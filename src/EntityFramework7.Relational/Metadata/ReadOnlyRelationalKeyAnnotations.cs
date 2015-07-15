@@ -31,7 +31,7 @@ namespace Microsoft.Data.Entity.Metadata
 
             builder
                 .Append(_key.IsPrimaryKey() ? "PK_" : "AK_")
-                .Append(_key.EntityType.DisplayName());
+                .Append(_key.DeclaringEntityType.DisplayName());
 
             if (!_key.IsPrimaryKey())
             {

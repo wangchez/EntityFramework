@@ -26,6 +26,6 @@ namespace Microsoft.Data.Entity.Metadata
 
         IReadOnlyList<IProperty> IKey.Properties => Properties;
 
-        IEntityType IKey.EntityType => DeclaringEntityType;
+        IEntityType IKey.DeclaringEntityType => DeclaringEntityType;
     }
 }

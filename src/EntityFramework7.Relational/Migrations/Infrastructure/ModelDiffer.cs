@@ -514,7 +514,7 @@ namespace Microsoft.Data.Entity.Migrations.Infrastructure
         protected virtual IEnumerable<MigrationOperation> Add(IKey target)
         {
             var targetExtensions = MetadataExtensions.Extensions(target);
-            var targetEntityTypeExtensions = MetadataExtensions.Extensions(target.EntityType.RootType());
+            var targetEntityTypeExtensions = MetadataExtensions.Extensions(target.DeclaringEntityType.RootType());
 
             MigrationOperation operation;
             if (target.IsPrimaryKey())
@@ -545,7 +545,7 @@ namespace Microsoft.Data.Entity.Migrations.Infrastructure
         protected virtual IEnumerable<MigrationOperation> Remove(IKey source)
         {
             var sourceExtensions = MetadataExtensions.Extensions(source);
-            var sourceEntityTypeExtensions = MetadataExtensions.Extensions(source.EntityType.RootType());
+            var sourceEntityTypeExtensions = MetadataExtensions.Extensions(source.DeclaringEntityType.RootType());
 
             if (source.IsPrimaryKey())
             {
