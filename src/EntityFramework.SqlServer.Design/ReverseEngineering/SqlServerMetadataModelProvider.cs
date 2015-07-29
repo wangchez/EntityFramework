@@ -272,9 +272,8 @@ namespace Microsoft.Data.Entity.SqlServer.Design.ReverseEngineering
                         Strings.CannotFindTableForColumn(tc.Id, tc.TableId));
                     continue;
                 }
-
-                // IModel will not allow Properties to be created without a Type, so map to CLR type here.
-                // This means if we come across a column with a SQL Server type which we can't map we will ignore it.
+                
+                // If we come across a column with a SQL Server type which we can't map we will ignore it.
                 // Note: foreign key properties appear just like any other property in the relational model.
                 Type clrPropertyType;
                 if (!SqlServerTypeMapping._sqlTypeToClrTypeMap.TryGetValue(tc.DataType, out clrPropertyType))
@@ -289,7 +288,7 @@ namespace Microsoft.Data.Entity.SqlServer.Design.ReverseEngineering
                     clrPropertyType = clrPropertyType.MakeNullable();
                 }
 
-                var relationalProperty = entityType.AddProperty(tc.Id, clrPropertyType, shadowProperty: true);
+                var relationalProperty = entityType.AddProperty(tc.Id, clrPropertyType);
                 _relationalColumnIdToRelationalPropertyMap[tc.Id] = relationalProperty;
             }
 
@@ -343,10 +342,7 @@ namespace Microsoft.Data.Entity.SqlServer.Design.ReverseEngineering
                         }
                     }
 
-                    var codeGenProperty = codeGenEntityType.AddProperty(
-                        nameMapper.PropertyToPropertyNameMap[relationalProperty],
-                        relationalProperty.ClrType,
-                        shadowProperty: true);
+                    var codeGenProperty = codeGenEntityType.AddProperty(nameMapper.PropertyToPropertyNameMap[relationalProperty], ((IProperty)relationalProperty).ClrType);
                     _relationalPropertyToCodeGenPropertyMap[relationalProperty] = codeGenProperty;
                     ApplyPropertyProperties(codeGenProperty, _tableColumns[relationalProperty.Name]);
                 } // end of loop over all relational properties for given EntityType
@@ -625,7 +621,7 @@ namespace Microsoft.Data.Entity.SqlServer.Design.ReverseEngineering
                 var defaultExpressionOrValue =
                     _sqlServerLiteralUtilities
                         .ConvertSqlServerDefaultValue(
-                            property.ClrType, tableColumn.DefaultValue);
+                            ((IProperty)property).ClrType, tableColumn.DefaultValue);
                 if (defaultExpressionOrValue != null
                     && defaultExpressionOrValue.DefaultExpression != null)
                 {
@@ -641,7 +637,7 @@ namespace Microsoft.Data.Entity.SqlServer.Design.ReverseEngineering
                     _logger.LogWarning(
                         Strings.UnableToConvertDefaultValue(
                             tableColumn.Id, tableColumn.DefaultValue,
-                            property.ClrType, property.Name, property.DeclaringEntityType.Name));
+                            ((IProperty)property).ClrType, property.Name, property.DeclaringEntityType.Name));
                 }
             }
         }

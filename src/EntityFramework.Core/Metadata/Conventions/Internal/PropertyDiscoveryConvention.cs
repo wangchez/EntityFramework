@@ -16,9 +16,7 @@ namespace Microsoft.Data.Entity.Metadata.Conventions.Internal
         {
             Check.NotNull(entityTypeBuilder, nameof(entityTypeBuilder));
             var entityType = entityTypeBuilder.Metadata;
-
-            // TODO: Honor [NotMapped]
-            // Issue #107
+            
             if (entityType.HasClrType)
             {
                 var primitiveProperties = entityType.ClrType.GetRuntimeProperties().Where(IsCandidatePrimitiveProperty);
