@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Data.Entity.Query.Expressions;
 using Microsoft.Data.Entity.Query.ExpressionVisitors;
+using Microsoft.Data.Entity.Query.Preprocessor.ExpressionVisitors;
 using Microsoft.Data.Entity.Query.ResultOperators;
 using Microsoft.Data.Entity.Storage;
 using Microsoft.Data.Entity.Utilities;
@@ -33,27 +34,21 @@ namespace Microsoft.Data.Entity.Query
 
         private static readonly object _compiledQueryLockObject = new object();
 
-        private class CompiledQuery
-        {
-            public Type ResultItemType;
-            public Delegate Executor;
-        }
+        //private class ReadonlyNodeTypeProvider : INodeTypeProvider
+        //{
+        //    private readonly INodeTypeProvider _nodeTypeProvider;
 
-        private class ReadonlyNodeTypeProvider : INodeTypeProvider
-        {
-            private readonly INodeTypeProvider _nodeTypeProvider;
+        //    public ReadonlyNodeTypeProvider(INodeTypeProvider nodeTypeProvider)
+        //    {
+        //        _nodeTypeProvider = nodeTypeProvider;
+        //    }
 
-            public ReadonlyNodeTypeProvider(INodeTypeProvider nodeTypeProvider)
-            {
-                _nodeTypeProvider = nodeTypeProvider;
-            }
+        //    public bool IsRegistered(MethodInfo method) => _nodeTypeProvider.IsRegistered(method);
 
-            public bool IsRegistered(MethodInfo method) => _nodeTypeProvider.IsRegistered(method);
+        //    public Type GetNodeType(MethodInfo method) => _nodeTypeProvider.GetNodeType(method);
+        //}
 
-            public Type GetNodeType(MethodInfo method) => _nodeTypeProvider.GetNodeType(method);
-        }
-
-        private static readonly Lazy<ReadonlyNodeTypeProvider> _cachedNodeTypeProvider = new Lazy<ReadonlyNodeTypeProvider>(CreateNodeTypeProvider);
+        //private static readonly Lazy<ReadonlyNodeTypeProvider> _cachedNodeTypeProvider = new Lazy<ReadonlyNodeTypeProvider>(CreateNodeTypeProvider);
 
         private readonly IMemoryCache _memoryCache;
 
@@ -64,117 +59,105 @@ namespace Microsoft.Data.Entity.Query
             _memoryCache = memoryCache;
         }
 
-        public virtual TResult Execute<TResult>(
-            Expression query, IDatabase database, QueryContext queryContext)
-        {
-            Check.NotNull(query, nameof(query));
-            Check.NotNull(database, nameof(database));
-            Check.NotNull(queryContext, nameof(queryContext));
+        //public virtual TResult Execute<TResult>(
+        //    Expression query, IDatabase database, QueryContext queryContext)
+        //{
+        //    Check.NotNull(query, nameof(query));
+        //    Check.NotNull(database, nameof(database));
+        //    Check.NotNull(queryContext, nameof(queryContext));
 
-            var compiledQuery
-                = GetOrAdd(query, queryContext, database, isAsync: false, compiler: (q, ds) =>
-                    {
-                        var queryModel = CreateQueryParser().GetParsedQuery(q);
+        //    var compiledQuery
+        //        = GetOrAdd(query, queryContext, database, isAsync: false, compiler: (q, ds) =>
+        //            {
+        //                var queryModel = CreateQueryParser().GetParsedQuery(q);
 
-                        var streamedSequenceInfo
-                            = queryModel.GetOutputDataInfo() as StreamedSequenceInfo;
+        //                var streamedSequenceInfo
+        //                    = queryModel.GetOutputDataInfo() as StreamedSequenceInfo;
 
-                        var resultItemType
-                            = streamedSequenceInfo?.ResultItemType ?? typeof(TResult);
+        //                var resultItemType
+        //                    = streamedSequenceInfo?.ResultItemType ?? typeof(TResult);
 
-                        var executor
-                            = CompileQuery(ds, Database.CompileQueryMethod, resultItemType, queryModel);
+        //                var executor
+        //                    = CompileQuery(ds, Database.CompileQueryMethod, resultItemType, queryModel);
 
-                        return new CompiledQuery
-                        {
-                            ResultItemType = resultItemType,
-                            Executor = executor
-                        };
-                    });
+        //                return new CompiledQuery
+        //                {
+        //                    ResultItemType = resultItemType,
+        //                    Executor = executor
+        //                };
+        //            });
 
-            return
-                typeof(TResult) == compiledQuery.ResultItemType
-                    ? ((Func<QueryContext, IEnumerable<TResult>>)compiledQuery.Executor)(queryContext).First()
-                    : ((Func<QueryContext, TResult>)compiledQuery.Executor)(queryContext);
-        }
+        //    return
+        //        typeof(TResult) == compiledQuery.ResultItemType
+        //            ? ((Func<QueryContext, IEnumerable<TResult>>)compiledQuery.Executor)(queryContext).First()
+        //            : ((Func<QueryContext, TResult>)compiledQuery.Executor)(queryContext);
+        //}
 
         public virtual IAsyncEnumerable<TResult> ExecuteAsync<TResult>(
             Expression query, IDatabase database, QueryContext queryContext)
         {
-            Check.NotNull(query, nameof(query));
-            Check.NotNull(database, nameof(database));
-            Check.NotNull(queryContext, nameof(queryContext));
+            throw new NotImplementedException();
 
-            var compiledQuery
-                = GetOrAdd(query, queryContext, database, isAsync: true, compiler: (q, ds) =>
-                    {
-                        var queryModel = CreateQueryParser().GetParsedQuery(q);
+            //Check.NotNull(query, nameof(query));
+            //Check.NotNull(database, nameof(database));
+            //Check.NotNull(queryContext, nameof(queryContext));
 
-                        var executor
-                            = CompileQuery(ds, Database.CompileAsyncQueryMethod, typeof(TResult), queryModel);
+            //var compiledQuery
+            //    = GetOrAdd(query, queryContext, database, isAsync: true, compiler: (q, ds) =>
+            //        {
+            //            var queryModel = CreateQueryParser().GetParsedQuery(q);
 
-                        return new CompiledQuery
-                        {
-                            ResultItemType = typeof(TResult),
-                            Executor = executor
-                        };
-                    });
+            //            var executor
+            //                = CompileQuery(ds, Database.CompileAsyncQueryMethod, typeof(TResult), queryModel);
 
-            return ((Func<QueryContext, IAsyncEnumerable<TResult>>)compiledQuery.Executor)(queryContext);
+            //            return new CompiledQuery
+            //            {
+            //                ResultItemType = typeof(TResult),
+            //                Executor = executor
+            //            };
+            //        });
+
+            //return ((Func<QueryContext, IAsyncEnumerable<TResult>>)compiledQuery.Executor)(queryContext);
         }
 
         public virtual Task<TResult> ExecuteAsync<TResult>(
             Expression query, IDatabase database, QueryContext queryContext, CancellationToken cancellationToken)
         {
-            Check.NotNull(query, nameof(query));
-            Check.NotNull(database, nameof(database));
-            Check.NotNull(queryContext, nameof(queryContext));
+            throw new NotImplementedException();
 
-            var compiledQuery
-                = GetOrAdd(query, queryContext, database, isAsync: true, compiler: (q, ds) =>
-                    {
-                        var queryModel = CreateQueryParser().GetParsedQuery(q);
+            //Check.NotNull(query, nameof(query));
+            //Check.NotNull(database, nameof(database));
+            //Check.NotNull(queryContext, nameof(queryContext));
 
-                        var executor
-                            = CompileQuery(ds, Database.CompileAsyncQueryMethod, typeof(TResult), queryModel);
+            //var compiledQuery
+            //    = GetOrAdd(query, queryContext, database, isAsync: true, compiler: (q, ds) =>
+            //        {
+            //            var queryModel = CreateQueryParser().GetParsedQuery(q);
 
-                        return new CompiledQuery
-                        {
-                            ResultItemType = typeof(TResult),
-                            Executor = executor
-                        };
-                    });
+            //            var executor
+            //                = CompileQuery(ds, Database.CompileAsyncQueryMethod, typeof(TResult), queryModel);
 
-            return ((Func<QueryContext, IAsyncEnumerable<TResult>>)compiledQuery.Executor)(queryContext)
-                .First(cancellationToken);
+            //            return new CompiledQuery
+            //            {
+            //                ResultItemType = typeof(TResult),
+            //                Executor = executor
+            //            };
+            //        });
+
+            //return ((Func<QueryContext, IAsyncEnumerable<TResult>>)compiledQuery.Executor)(queryContext)
+            //    .First(cancellationToken);
         }
 
-        private CompiledQuery GetOrAdd(
-            Expression query,
-            QueryContext queryContext,
-            IDatabase database,
-            bool isAsync,
-            Func<Expression, IDatabase, CompiledQuery> compiler)
+        public virtual CompiledQuery<TResult> GetOrAdd<TResult>(
+            [NotNull] string cacheKey,
+            [NotNull] Func<CompiledQuery<TResult>> compiler)
         {
-            query = new QueryAnnotatingExpressionVisitor()
-                .Visit(query);
-
-            var parameterizedQuery
-                = ParameterExtractingExpressionVisitor
-                    .ExtractParameters(query, queryContext, new NullEvaluatableExpressionFilter());
-
-            var cacheKey
-                = database.Model.GetHashCode().ToString()
-                  + isAsync
-                  + new ExpressionStringBuilder()
-                      .Build(query);
-
-            CompiledQuery compiledQuery;
+            CompiledQuery<TResult> compiledQuery;
             lock (_compiledQueryLockObject)
             {
                 if (!_memoryCache.TryGetValue(cacheKey, out compiledQuery))
                 {
-                    compiledQuery = compiler(parameterizedQuery, database);
+                    compiledQuery = compiler();
                     _memoryCache.Set(cacheKey, compiledQuery);
                 }
             }
@@ -182,95 +165,128 @@ namespace Microsoft.Data.Entity.Query
             return compiledQuery;
         }
 
-        private static Delegate CompileQuery(
-            IDatabase database, MethodInfo compileMethodInfo, Type resultItemType, QueryModel queryModel)
-        {
-            try
-            {
-                return (Delegate)compileMethodInfo
-                    .MakeGenericMethod(resultItemType)
-                    .Invoke(database, new object[] { queryModel });
-            }
-            catch (TargetInvocationException e)
-            {
-                ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+        //private CompiledQuery GetOrAdd(
+        //    Expression query,
+        //    QueryContext queryContext,
+        //    IDatabase database,
+        //    bool isAsync,
+        //    Func<Expression, IDatabase, CompiledQuery> compiler)
+        //{
+        //    query = new QueryAnnotatingExpressionVisitor()
+        //        .Visit(query);
 
-                throw;
-            }
-        }
+        //    var parameterizedQuery
+        //        = ParameterExtractingExpressionVisitor
+        //            .ExtractParameters(query, queryContext, new NullEvaluatableExpressionFilter());
 
-        private static QueryParser CreateQueryParser()
-            => new QueryParser(
-                new ExpressionTreeParser(
-                    _cachedNodeTypeProvider.Value,
-                    new CompoundExpressionTreeProcessor(new IExpressionTreeProcessor[]
-                    {
-                        new PartialEvaluatingExpressionTreeProcessor(new NullEvaluatableExpressionFilter()),
-                        new FunctionEvaluationEnablingProcessor(),
-                        new TransformingExpressionTreeProcessor(ExpressionTransformerRegistry.CreateDefault())
-                    })));
+        //    var cacheKey
+        //        = database.Model.GetHashCode().ToString()
+        //          + isAsync
+        //          + new ExpressionStringBuilder()
+        //              .Build(parameterizedQuery);
 
-        private class NullEvaluatableExpressionFilter : EvaluatableExpressionFilterBase
-        {
-        }
+        //    CompiledQuery compiledQuery;
+        //    lock (_compiledQueryLockObject)
+        //    {
+        //        if (!_memoryCache.TryGetValue(cacheKey, out compiledQuery))
+        //        {
+        //            compiledQuery = compiler(parameterizedQuery, database);
+        //            _memoryCache.Set(cacheKey, compiledQuery);
+        //        }
+        //    }
 
-        private class FunctionEvaluationEnablingProcessor : IExpressionTreeProcessor
-        {
-            public Expression Process(Expression expressionTree)
-            {
-                return new FunctionEvaluationEnablingVisitor().Visit(expressionTree);
-            }
-        }
+        //    return compiledQuery;
+        //}
 
-        private class FunctionEvaluationEnablingVisitor : ExpressionVisitorBase
-        {
-            protected override Expression VisitExtension(Expression expression)
-            {
-                var methodCallWrapper = expression as MethodCallEvaluationPreventingExpression;
-                if (methodCallWrapper != null)
-                {
-                    return Visit(methodCallWrapper.MethodCall);
-                }
+        //private static Delegate CompileQuery(
+        //    IDatabase database, MethodInfo compileMethodInfo, Type resultItemType, QueryModel queryModel)
+        //{
+        //    try
+        //    {
+        //        return (Delegate)compileMethodInfo
+        //            .MakeGenericMethod(resultItemType)
+        //            .Invoke(database, new object[] { queryModel });
+        //    }
+        //    catch (TargetInvocationException e)
+        //    {
+        //        ExceptionDispatchInfo.Capture(e.InnerException).Throw();
 
-                var propertyWrapper = expression as PropertyEvaluationPreventingExpression;
-                if (propertyWrapper != null)
-                {
-                    return Visit(propertyWrapper.MemberExpression);
-                }
+        //        throw;
+        //    }
+        //}
 
-                return base.VisitExtension(expression);
-            }
+        //private static QueryParser CreateQueryParser()
+        //    => new QueryParser(
+        //        new ExpressionTreeParser(
+        //            _cachedNodeTypeProvider.Value,
+        //            new CompoundExpressionTreeProcessor(new IExpressionTreeProcessor[]
+        //            {
+        //                new PartialEvaluatingExpressionTreeProcessor(new NullEvaluatableExpressionFilter()),
+        //                new FunctionEvaluationEnablingProcessor(),
+        //                new TransformingExpressionTreeProcessor(ExpressionTransformerRegistry.CreateDefault())
+        //            })));
 
-            protected override Expression VisitSubQuery(SubQueryExpression expression)
-            {
-                var clonedModel = expression.QueryModel.Clone();
-                clonedModel.TransformExpressions(Visit);
+        //private class NullEvaluatableExpressionFilter : EvaluatableExpressionFilterBase
+        //{
+        //}
 
-                return new SubQueryExpression(clonedModel);
-            }
-        }
+        //private class FunctionEvaluationEnablingProcessor : IExpressionTreeProcessor
+        //{
+        //    public Expression Process(Expression expressionTree)
+        //    {
+        //        return new FunctionEvaluationEnablingVisitor().Visit(expressionTree);
+        //    }
+        //}
 
-        private static ReadonlyNodeTypeProvider CreateNodeTypeProvider()
-        {
-            var methodInfoBasedNodeTypeRegistry = MethodInfoBasedNodeTypeRegistry.CreateFromRelinqAssembly();
+        //private class FunctionEvaluationEnablingVisitor : ExpressionVisitorBase
+        //{
+        //    protected override Expression VisitExtension(Expression expression)
+        //    {
+        //        var methodCallWrapper = expression as MethodCallEvaluationPreventingExpression;
+        //        if (methodCallWrapper != null)
+        //        {
+        //            return Visit(methodCallWrapper.MethodCall);
+        //        }
 
-            methodInfoBasedNodeTypeRegistry
-                .Register(QueryAnnotationExpressionNode.SupportedMethods, typeof(QueryAnnotationExpressionNode));
+        //        var propertyWrapper = expression as PropertyEvaluationPreventingExpression;
+        //        if (propertyWrapper != null)
+        //        {
+        //            return Visit(propertyWrapper.MemberExpression);
+        //        }
 
-            methodInfoBasedNodeTypeRegistry
-                .Register(IncludeExpressionNode.SupportedMethods, typeof(IncludeExpressionNode));
+        //        return base.VisitExtension(expression);
+        //    }
 
-            methodInfoBasedNodeTypeRegistry
-                .Register(ThenIncludeExpressionNode.SupportedMethods, typeof(ThenIncludeExpressionNode));
+        //    protected override Expression VisitSubQuery(SubQueryExpression expression)
+        //    {
+        //        var clonedModel = expression.QueryModel.Clone();
+        //        clonedModel.TransformExpressions(Visit);
 
-            var innerProviders
-                = new INodeTypeProvider[]
-                {
-                    methodInfoBasedNodeTypeRegistry,
-                    MethodNameBasedNodeTypeRegistry.CreateFromRelinqAssembly()
-                };
+        //        return new SubQueryExpression(clonedModel);
+        //    }
+        //}
 
-            return new ReadonlyNodeTypeProvider(new CompoundNodeTypeProvider(innerProviders));
-        }
+        //private static ReadonlyNodeTypeProvider CreateNodeTypeProvider()
+        //{
+        //    var methodInfoBasedNodeTypeRegistry = MethodInfoBasedNodeTypeRegistry.CreateFromRelinqAssembly();
+
+        //    methodInfoBasedNodeTypeRegistry
+        //        .Register(QueryAnnotationExpressionNode.SupportedMethods, typeof(QueryAnnotationExpressionNode));
+
+        //    methodInfoBasedNodeTypeRegistry
+        //        .Register(IncludeExpressionNode.SupportedMethods, typeof(IncludeExpressionNode));
+
+        //    methodInfoBasedNodeTypeRegistry
+        //        .Register(ThenIncludeExpressionNode.SupportedMethods, typeof(ThenIncludeExpressionNode));
+
+        //    var innerProviders
+        //        = new INodeTypeProvider[]
+        //        {
+        //            methodInfoBasedNodeTypeRegistry,
+        //            MethodNameBasedNodeTypeRegistry.CreateFromRelinqAssembly()
+        //        };
+
+        //    return new ReadonlyNodeTypeProvider(new CompoundNodeTypeProvider(innerProviders));
+        //}
     }
 }

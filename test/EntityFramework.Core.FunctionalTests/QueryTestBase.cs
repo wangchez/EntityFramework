@@ -609,17 +609,17 @@ namespace Microsoft.Data.Entity.FunctionalTests
         [Fact]
         public virtual void Where_simple_closure_via_query_cache_nullable_type()
         {
-            int? reportsTo = 2;
-
-            AssertQuery<Employee>(
-                es => es.Where(e => e.ReportsTo == reportsTo),
-                entryCount: 5);
-
-            reportsTo = 5;
+            int? reportsTo = 5;
 
             AssertQuery<Employee>(
                 es => es.Where(e => e.ReportsTo == reportsTo),
                 entryCount: 3);
+
+            reportsTo = 2;
+
+            AssertQuery<Employee>(
+                es => es.Where(e => e.ReportsTo == reportsTo),
+                entryCount: 5);
 
             reportsTo = null;
 

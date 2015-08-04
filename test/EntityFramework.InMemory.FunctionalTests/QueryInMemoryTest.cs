@@ -11,5 +11,10 @@ namespace Microsoft.Data.Entity.InMemory.FunctionalTests
             : base(fixture)
         {
         }
+
+        public override void Where_simple_closure_via_query_cache_nullable_type()
+        {
+            base.Where_simple_closure_via_query_cache_nullable_type();
+        }
     }
 }

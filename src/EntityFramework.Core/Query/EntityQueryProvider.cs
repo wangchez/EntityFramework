@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Data.Entity.Storage;
 using Microsoft.Data.Entity.Utilities;
+using Microsoft.Framework.DependencyInjection;
 
 namespace Microsoft.Data.Entity.Query
 {
@@ -20,26 +21,28 @@ namespace Microsoft.Data.Entity.Query
             = typeof(EntityQueryProvider).GetRuntimeMethods()
                 .Single(m => m.Name == "CreateQuery" && m.IsGenericMethod);
 
+        private readonly IServiceProvider _serviceProvider;
+
         private readonly DbContext _context;
         private readonly IDatabase _database;
         private readonly ICompiledQueryCache _compiledQueryCache;
         private readonly IQueryContextFactory _queryContextFactory;
 
-        public EntityQueryProvider(
-            [NotNull] DbContext context,
-            [NotNull] IDatabase database,
-            [NotNull] ICompiledQueryCache compiledQueryCache,
-            [NotNull] IQueryContextFactory queryContextFactory)
+        public EntityQueryProvider([NotNull] IServiceProvider serviceProvider)
         {
-            Check.NotNull(context, nameof(context));
-            Check.NotNull(database, nameof(database));
-            Check.NotNull(compiledQueryCache, nameof(compiledQueryCache));
-            Check.NotNull(queryContextFactory, nameof(queryContextFactory));
+            Check.NotNull(serviceProvider, nameof(serviceProvider));
 
-            _context = context;
-            _database = database;
-            _compiledQueryCache = compiledQueryCache;
-            _queryContextFactory = queryContextFactory;
+            //Check.NotNull(context, nameof(context));
+            //Check.NotNull(database, nameof(database));
+            //Check.NotNull(compiledQueryCache, nameof(compiledQueryCache));
+            //Check.NotNull(queryContextFactory, nameof(queryContextFactory));
+
+            _serviceProvider = serviceProvider;
+
+            _context = serviceProvider.GetRequiredService<DbContext>();
+            _database = serviceProvider.GetRequiredService<IDatabase>();
+            _compiledQueryCache = serviceProvider.GetRequiredService<ICompiledQueryCache>();
+            _queryContextFactory = serviceProvider.GetRequiredService<IQueryContextFactory>();
         }
 
         public virtual IQueryable<TElement> CreateQuery<TElement>(Expression expression)
@@ -64,11 +67,7 @@ namespace Microsoft.Data.Entity.Query
         {
             Check.NotNull(expression, nameof(expression));
 
-            var queryContext = _queryContextFactory.Create();
-
-            queryContext.ContextType = _context.GetType();
-
-            return _compiledQueryCache.Execute<TResult>(expression, _database, queryContext);
+            return _serviceProvider.GetRequiredService<IQueryExecutor>().Execute<TResult>(expression);
         }
 
         public virtual object Execute(Expression expression)

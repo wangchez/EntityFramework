@@ -10,6 +10,7 @@ using Microsoft.Data.Entity.Internal;
 using Microsoft.Data.Entity.Metadata.Conventions.Internal;
 using Microsoft.Data.Entity.Metadata.Internal;
 using Microsoft.Data.Entity.Query;
+using Microsoft.Data.Entity.Query.Preprocessor;
 using Microsoft.Data.Entity.Storage;
 using Microsoft.Data.Entity.Utilities;
 using Microsoft.Data.Entity.ValueGeneration;
@@ -92,7 +93,6 @@ namespace Microsoft.Framework.DependencyInjection
                 .AddScoped<IInternalEntityEntryNotifier, InternalEntityEntryNotifier>()
                 .AddScoped<IInternalEntityEntrySubscriber, InternalEntityEntrySubscriber>()
                 .AddScoped<IValueGenerationManager, ValueGenerationManager>()
-                .AddScoped<IEntityQueryProvider, EntityQueryProvider>()
                 .AddScoped<IChangeTrackerFactory, ChangeTrackerFactory>()
                 .AddScoped<IChangeDetector, ChangeDetector>()
                 .AddScoped<IEntityEntryGraphIterator, EntityEntryGraphIterator>()
@@ -112,9 +112,18 @@ namespace Microsoft.Framework.DependencyInjection
                 .AddScoped(p => GetProviderServices(p).ModelSource)
                 .AddScoped(p => GetProviderServices(p).ModelValidator)
                 .AddSingleton<IMemoryCache, MemoryCache>()
+                .AddQuery()
                 .AddOptions());
 
             return new EntityFrameworkServicesBuilder(serviceCollection);
+        }
+
+        private static IServiceCollection AddQuery(this IServiceCollection serviceCollection)
+        {
+            return serviceCollection
+                .AddScoped<IEntityQueryProvider, EntityQueryProvider>()
+                .AddScoped<IQueryExecutor, QueryExecutor>()
+                .AddScoped<IQueryPreprocessor, QueryPreprocessor>();
         }
 
         private static IDbContextServices GetContextServices(IServiceProvider serviceProvider)

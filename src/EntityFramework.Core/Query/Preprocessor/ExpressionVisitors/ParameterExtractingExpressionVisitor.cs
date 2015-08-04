@@ -2,37 +2,27 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.Data.Entity.Internal;
+using Microsoft.Data.Entity.Query.ExpressionVisitors;
 using Remotion.Linq.Parsing.ExpressionVisitors.TreeEvaluation;
 
-namespace Microsoft.Data.Entity.Query.ExpressionVisitors
+namespace Microsoft.Data.Entity.Query.Preprocessor.ExpressionVisitors
 {
     public class ParameterExtractingExpressionVisitor : ExpressionVisitorBase
     {
-        public static Expression ExtractParameters(
-            [NotNull] Expression expressionTree,
-            [NotNull] QueryContext queryContext,
-            [NotNull] IEvaluatableExpressionFilter evaluatableExpressionFilter)
-        {
-            var functionEvaluationDisabledExpression = new FunctionEvaluationDisablingVisitor().Visit(expressionTree);
-            var partialEvaluationInfo = EvaluatableTreeFindingExpressionVisitor.Analyze(functionEvaluationDisabledExpression, evaluatableExpressionFilter);
-            var visitor = new ParameterExtractingExpressionVisitor(partialEvaluationInfo, queryContext);
-
-            return visitor.Visit(functionEvaluationDisabledExpression);
-        }
-
         private readonly PartialEvaluationInfo _partialEvaluationInfo;
-        private readonly QueryContext _queryContext;
+        private readonly IDictionary<string, object> _parameters;
 
-        private ParameterExtractingExpressionVisitor(
-            PartialEvaluationInfo partialEvaluationInfo, QueryContext queryContext)
+        public ParameterExtractingExpressionVisitor(
+            PartialEvaluationInfo partialEvaluationInfo, IDictionary<string, object> parameters)
         {
             _partialEvaluationInfo = partialEvaluationInfo;
-            _queryContext = queryContext;
+            _parameters = parameters;
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression methodCallExpression)
@@ -97,9 +87,9 @@ namespace Microsoft.Data.Entity.Query.ExpressionVisitors
                     }
 
                     parameterName
-                        = $"{CompiledQueryCache.CompiledQueryParameterPrefix}{parameterName}_{_queryContext.ParameterValues.Count}";
+                        = $"{CompiledQueryCache.CompiledQueryParameterPrefix}{parameterName}_{_parameters.Count}";
 
-                    _queryContext.ParameterValues.Add(parameterName, parameterValue);
+                    _parameters.Add(parameterName, parameterValue);
 
                     return e.Type == expression.Type
                         ? Expression.Parameter(e.Type, parameterName)

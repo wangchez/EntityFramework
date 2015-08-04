@@ -6,8 +6,9 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Data.Entity.Internal;
 using Microsoft.Data.Entity.Query.Annotations;
+using Microsoft.Data.Entity.Query.ExpressionVisitors;
 
-namespace Microsoft.Data.Entity.Query.ExpressionVisitors
+namespace Microsoft.Data.Entity.Query.Preprocessor.ExpressionVisitors
 {
     public class QueryAnnotatingExpressionVisitor : ExpressionVisitorBase
     {

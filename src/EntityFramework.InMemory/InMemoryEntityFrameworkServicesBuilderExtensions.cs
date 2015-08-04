@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using Microsoft.Data.Entity.Infrastructure;
 using Microsoft.Data.Entity.InMemory;
 using Microsoft.Data.Entity.InMemory.Query;
+using Microsoft.Data.Entity.Query.Compiler;
 using Microsoft.Data.Entity.Storage;
 using Microsoft.Data.Entity.Utilities;
 
@@ -31,6 +32,7 @@ namespace Microsoft.Framework.DependencyInjection
                     .AddScoped<InMemoryQueryContextFactory>()
                     .AddScoped<InMemoryDatabaseProviderServices>()
                     .AddScoped<IInMemoryDatabase, InMemoryDatabase>()
+                    .AddScoped<IQueryCompiler, InMemoryQueryCompiler>()
                     .AddScoped<InMemoryDatabaseCreator>());
 
             return builder;
