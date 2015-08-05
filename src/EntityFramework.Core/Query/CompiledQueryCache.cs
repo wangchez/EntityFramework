@@ -148,11 +148,11 @@ namespace Microsoft.Data.Entity.Query
             //    .First(cancellationToken);
         }
 
-        public virtual CompiledQuery<TResult> GetOrAdd<TResult>(
+        public virtual CompiledQuery GetOrAdd(
             [NotNull] string cacheKey,
-            [NotNull] Func<CompiledQuery<TResult>> compiler)
+            [NotNull] Func<CompiledQuery> compiler)
         {
-            CompiledQuery<TResult> compiledQuery;
+            CompiledQuery compiledQuery;
             lock (_compiledQueryLockObject)
             {
                 if (!_memoryCache.TryGetValue(cacheKey, out compiledQuery))

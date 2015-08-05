@@ -10,23 +10,28 @@ using JetBrains.Annotations;
 using Microsoft.Data.Entity.Query.Compiler;
 using Microsoft.Data.Entity.Query.Preprocessor;
 using Microsoft.Data.Entity.Utilities;
+using System.Linq;
 
 namespace Microsoft.Data.Entity.Query
 {
     public class QueryExecutor : IQueryExecutor
     {
+        private readonly IQueryContextFactory _contextFactory;
         private readonly IQueryPreprocessor _preprocessor;
         private readonly IQueryCompiler _queryCompiler;
         private readonly IServiceProvider _serviceProvider;
 
         public QueryExecutor(
+            [NotNull] IQueryContextFactory contextFactory,
             [NotNull] IQueryPreprocessor preprocessor,
             [NotNull] IQueryCompiler queryCompiler,
             IServiceProvider serviceProvider)
         {
+            Check.NotNull(contextFactory, nameof(contextFactory));
             Check.NotNull(preprocessor, nameof(preprocessor));
             Check.NotNull(queryCompiler, nameof(queryCompiler));
 
+            _contextFactory = contextFactory;
             _preprocessor = preprocessor;
             _queryCompiler = queryCompiler;
             _serviceProvider = serviceProvider;
@@ -36,13 +41,17 @@ namespace Microsoft.Data.Entity.Query
         {
             Check.NotNull(query, nameof(query));
 
-            IDictionary<string, object> parameters;
+            var queryContext = _contextFactory.Create();
 
-            query = _preprocessor.Preprocess(query, out parameters);
+            query = _preprocessor.Preprocess(query, queryContext);
 
             var compiledQuery = _queryCompiler.CompileQuery<TResult>(query);
 
-            return compiledQuery.Executor(parameters);
+
+            return
+                typeof(TResult) == compiledQuery.ResultItemType
+                    ? ((Func<QueryContext, IEnumerable<TResult>>)compiledQuery.Executor)(queryContext).First()
+                    : ((Func<QueryContext, TResult>)compiledQuery.Executor)(queryContext);
         }
 
         public IAsyncEnumerable<TResult> ExecuteAsync<TResult>(Expression expression)

@@ -2,12 +2,12 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 
 namespace Microsoft.Data.Entity.Query
 {
-    public class CompiledQuery<TResult>
+    public class CompiledQuery
     {
-        public Func<IDictionary<string, object>, TResult> Executor;
+        public Type ResultItemType;
+        public Delegate Executor;
     }
 }

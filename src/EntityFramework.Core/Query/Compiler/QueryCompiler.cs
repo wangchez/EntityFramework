@@ -29,7 +29,7 @@ namespace Microsoft.Data.Entity.Query.Compiler
         private static readonly Lazy<ReadonlyNodeTypeProvider> _cachedNodeTypeProvider = new Lazy<ReadonlyNodeTypeProvider>(CreateNodeTypeProvider);
 
         private static MethodInfo CompileQueryMethod { get; }
-            = typeof(QueryCompiler).GetTypeInfo().GetDeclaredMethod("CompileQueryModel");
+            = typeof(QueryCompiler).GetTypeInfo().GetDeclaredMethod("CompileQueryNew");
 
         public QueryCompiler(
             [NotNull] ICompiledQueryCache queryCache)
@@ -39,7 +39,7 @@ namespace Microsoft.Data.Entity.Query.Compiler
             _queryCache = queryCache;
         }
 
-        public virtual CompiledQuery<TResult> CompileQuery<TResult>(Expression query)
+        public virtual CompiledQuery CompileQuery<TResult>(Expression query)
         {
             return _queryCache.GetOrAdd(GenerateCacheKey(query, false), () =>
                 {
@@ -61,31 +61,19 @@ namespace Microsoft.Data.Entity.Query.Compiler
                     var resultItemType
                         = streamedSequenceInfo?.ResultItemType ?? typeof(TResult);
 
-                    var compiledQuery = CompileQueryMethod
-                        .MakeGenericMethod(resultItemType)
-                        .Invoke(this, new object[] { queryModel });
-
-                    if (compiledQuery is CompiledQuery<TResult>)
+                    return new CompiledQuery
                     {
-                        return (CompiledQuery<TResult>)compiledQuery;
-                    }
-
-                    if (compiledQuery is CompiledQuery<IEnumerable<TResult>>)
-                    {
-                        return new CompiledQuery<TResult>
-                        {
-                            Executor = d => ((CompiledQuery<IEnumerable<TResult>>)compiledQuery)
-                                .Executor(d).First()
-                        };
-                    }
-
-                    throw new NotImplementedException();
+                        ResultItemType = resultItemType,
+                        Executor = (Delegate)CompileQueryMethod
+                            .MakeGenericMethod(resultItemType)
+                            .Invoke(this, new object[] { queryModel })
+                    };
                 });
         }
 
         protected abstract string GenerateCacheKey(Expression query, bool isAsync);
 
-        protected abstract CompiledQuery<IEnumerable<TResult>> CompileQueryModel<TResult>(QueryModel queryModel);
+        protected abstract Func<QueryContext, IEnumerable<TResult>> CompileQueryNew<TResult>(QueryModel queryModel);
 
         private class FunctionEvaluationEnablingProcessor : IExpressionTreeProcessor
         {

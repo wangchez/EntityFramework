@@ -16,13 +16,13 @@ namespace Microsoft.Data.Entity.Query.Preprocessor.ExpressionVisitors
     public class ParameterExtractingExpressionVisitor : ExpressionVisitorBase
     {
         private readonly PartialEvaluationInfo _partialEvaluationInfo;
-        private readonly IDictionary<string, object> _parameters;
+        private readonly QueryContext _queryContext;
 
         public ParameterExtractingExpressionVisitor(
-            PartialEvaluationInfo partialEvaluationInfo, IDictionary<string, object> parameters)
+            PartialEvaluationInfo partialEvaluationInfo, QueryContext queryContext)
         {
             _partialEvaluationInfo = partialEvaluationInfo;
-            _parameters = parameters;
+            _queryContext = queryContext;
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression methodCallExpression)
@@ -87,9 +87,9 @@ namespace Microsoft.Data.Entity.Query.Preprocessor.ExpressionVisitors
                     }
 
                     parameterName
-                        = $"{CompiledQueryCache.CompiledQueryParameterPrefix}{parameterName}_{_parameters.Count}";
+                        = $"{CompiledQueryCache.CompiledQueryParameterPrefix}{parameterName}_{_queryContext.ParameterValues.Count}";
 
-                    _parameters.Add(parameterName, parameterValue);
+                    _queryContext.ParameterValues.Add(parameterName, parameterValue);
 
                     return e.Type == expression.Type
                         ? Expression.Parameter(e.Type, parameterName)

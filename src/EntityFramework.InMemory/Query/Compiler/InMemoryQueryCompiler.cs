@@ -48,30 +48,15 @@ namespace Microsoft.Data.Entity.Query.Compiler
             _clrPropertyGetterSource = clrPropertyGetterSource;
         }
 
-        protected override CompiledQuery<IEnumerable<TResult>> CompileQueryModel<TResult>(QueryModel queryModel)
-        {
-            var executor = new InMemoryQueryCompilationContext(
-                    _model,
-                    _logger,
-                    _entityMaterializerSource,
-                    _entityKeyFactorySource,
-                    _clrPropertyGetterSource)
-                    .CreateQueryModelVisitor()
-                    .CreateQueryExecutor<TResult>(Check.NotNull(queryModel, nameof(queryModel)));
-
-            return new CompiledQuery<IEnumerable<TResult>>
-            {
-                Executor = d =>
-                {
-                    var qc = _queryContextFactory.Create();
-                    foreach(var kvp in d)
-                    {
-                        qc.ParameterValues.Add(kvp);
-                    }
-                    return executor(qc);
-                }
-            };
-        }
+        protected override Func<QueryContext, IEnumerable<TResult>> CompileQueryNew<TResult>(QueryModel queryModel)
+            => new InMemoryQueryCompilationContext(
+                _model,
+                _logger,
+                _entityMaterializerSource,
+                _entityKeyFactorySource,
+                _clrPropertyGetterSource)
+                .CreateQueryModelVisitor()
+                .CreateQueryExecutor<TResult>(Check.NotNull(queryModel, nameof(queryModel)));
 
         protected override string GenerateCacheKey(Expression query, bool isAsync)
         {

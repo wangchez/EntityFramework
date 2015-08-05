@@ -29,8 +29,8 @@ namespace Microsoft.Data.Entity.Query
             [NotNull] QueryContext queryContext,
             CancellationToken cancellationToken);
 
-        CompiledQuery<TResult> GetOrAdd<TResult>(
+        CompiledQuery GetOrAdd(
             [NotNull] string cacheKey,
-            [NotNull] Func<CompiledQuery<TResult>> compiler);
+            [NotNull] Func<CompiledQuery> compiler);
     }
 }

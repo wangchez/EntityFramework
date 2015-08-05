@@ -7,6 +7,6 @@ namespace Microsoft.Data.Entity.Query.Compiler
 {
     public interface IQueryCompiler
     {
-        CompiledQuery<TResult> CompileQuery<TResult>(Expression query);
+        CompiledQuery CompileQuery<TResult>(Expression query);
     }
 }

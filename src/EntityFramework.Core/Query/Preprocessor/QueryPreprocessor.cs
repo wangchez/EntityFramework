@@ -15,9 +15,8 @@ namespace Microsoft.Data.Entity.Query.Preprocessor
         {
         }
 
-        public virtual Expression Preprocess(Expression query, out IDictionary<string, object> parameters)
+        public virtual Expression Preprocess(Expression query, QueryContext queryContext)
         {
-            parameters = new Dictionary<string, object>();
 
             query = new QueryAnnotatingExpressionVisitor().Visit(query);
 
@@ -25,7 +24,7 @@ namespace Microsoft.Data.Entity.Query.Preprocessor
 
             var partialEvaluationInfo = EvaluatableTreeFindingExpressionVisitor.Analyze(query, new NullEvaluatableExpressionFilter());
 
-            query = new ParameterExtractingExpressionVisitor(partialEvaluationInfo, parameters).Visit(query);
+            query = new ParameterExtractingExpressionVisitor(partialEvaluationInfo, queryContext).Visit(query);
 
             return query;
         }
